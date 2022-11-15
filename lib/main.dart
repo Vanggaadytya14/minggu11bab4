@@ -1,221 +1,125 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:minggu11bab4/widgets/button.dart';
+import 'package:minggu11bab4/widgets/dropdown.dart';
+import 'package:minggu11bab4/widgets/history.dart';
+import 'package:minggu11bab4/widgets/result.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key key}) : super(key: key);
-
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        // This makes the visual density adapt to the platform that you run
+        // the app on. For desktop platforms, the controls will be smaller and
+        // closer together (more dense) than on mobile platforms.
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: MyHomePage(title: 'Konverter Suhu'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key key, this.title}) : super(key: key);
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
+  MyHomePage({Key key, this.title}) : super(key: key);
 
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-  double _inputuser = 0;
-  double _kevin = 0;
-  double _reamur = 0;
-  final inputController = TextEditingController();
-  String newValue = "Kelvin";
+  final _controllerCelcius = TextEditingController();
+  double _currentSliderValue = 0;
+  //variabel berubah
+  double _inputCelcius = 0;
   double _result = 0;
-  String changeValue = "";
+  //tambahkan variabel lain yang dibutuhkan
+  var jenisSuhu = ["Kelvin", "Reamur"];
+  var selectedSuhu = "Kelvin";
+  List<String> history = <String>[];
 
-  List<String> listViewItem = <String>[];
-
-  var listItem = [
-    "Kelvin",
-    "Reamur",
-  ];
-  void perhitunganSuhu() {
+  setSelectedSuhu(String value) {
     setState(() {
-      _inputuser = double.parse(inputController.text);
-
-      if (newValue == "Kelvin") {
-        _result = _inputuser + 273;
-      } else {
-        _result = (4 / 5) * _inputuser;
-      }
+      selectedSuhu = value.toString();
     });
-    listViewItem.add(_result.toString());
   }
 
-  void _incrementCounter() {
+  konverterSuhu() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      if (_controllerCelcius.text.isNotEmpty) {
+        _inputCelcius = double.parse(_controllerCelcius.text);
+        if (selectedSuhu == "Kelvin") {
+          _result = _inputCelcius + 273;
+        }
+        if (selectedSuhu == "Reamur") {
+          _result = _inputCelcius * 0.8;
+        }
+
+        history.add("$selectedSuhu : $_result");
+      }
     });
   }
 
   @override
+  void dispose() {
+    // Clean up the controller when the widget is disposed.
+    _controllerCelcius.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
       ),
       body: Container(
+        margin: const EdgeInsets.all(8),
         child: Column(
-          children: <Widget>[
-            Container(
-              child: Input(
-                myController: inputController,
+          children: [
+            Slider(
+              value: _currentSliderValue,
+              max: 100,
+              divisions: 10,
+              onChanged: (double value) {
+                setState(() {
+                  _currentSliderValue = value;
+                  _controllerCelcius.text = _currentSliderValue.toString();
+                });
+              },
+            ),
+            TextFormField(
+              decoration: const InputDecoration(
+                hintText: ("Masukkan Suhu Dalam Celcius"), //hint text
               ),
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              keyboardType: TextInputType.number,
+              controller: _controllerCelcius,
             ),
-            Container(
-              child: DropdownButton<String>(
-                  items: listItem.map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-
-                  /*
-                [
-                DropdownMenuItem(
-                  value: "Kelvin" , child: Container(child: Text("Kelvin"),),),
-                DropdownMenuItem(
-                  value: "Reamur", child: Container(child: Text("Reamur"),),)
-              ],
-              */
-                  value: newValue,
-                  onChanged: (String changeValue) {
-                    setState(() {
-                      newValue = changeValue;
-                      perhitunganSuhu();
-                    });
-                  }),
-            ),
-            Result(
+            DropdownSuhu(
+                jenisSuhu: jenisSuhu,
+                selectedSuhu: selectedSuhu,
+                setSelectedSuhu: setSelectedSuhu),
+            ResultKonversi(
               result: _result,
             ),
-            SizedBox(
-              child: Container(
-                  child: Convert(
-                konvertHandler: perhitunganSuhu,
-              )),
+            ButtonKonversi(konversi: konverterSuhu),
+            const Text(
+              "Riwayat Konversi",
+              style: TextStyle(fontSize: 20),
             ),
-            Container(child: Text("Riwayat Konversi")),
-            Expanded(
-                child: ListView(
-              children: listViewItem.map((String value) {
-                return Container(
-                    margin: EdgeInsets.all(10),
-                    child: Text(
-                      value,
-                      style: TextStyle(fontSize: 15),
-                    ));
-              }).toList(),
-            )),
-            //
+            History(history: history)
           ],
         ),
-      ),
-    );
-  }
-}
-
-class Convert extends StatelessWidget {
-  const Convert({
-    Key key,
-    this.konvertHandler,
-  }) : super(key: key);
-
-  final Function konvertHandler;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton(
-      style: TextButton.styleFrom(backgroundColor: Colors.blueAccent),
-      onPressed: () {
-        konvertHandler();
-      },
-      child: Text(
-        "Konversi Suhu",
-        style: TextStyle(color: Colors.white),
-      ),
-    );
-  }
-}
-
-class Input extends StatelessWidget {
-  const Input({
-    Key key,
-    this.myController,
-  }) : super(key: key);
-
-  final TextEditingController myController;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextFormField(
-      controller: myController,
-      decoration: InputDecoration(hintText: "Masukkan Nilai "),
-      inputFormatters: <TextInputFormatter>[
-        FilteringTextInputFormatter.digitsOnly,
-      ],
-      keyboardType: TextInputType.number,
-    );
-  }
-}
-
-class Result extends StatelessWidget {
-  const Result({
-    Key key,
-    this.result,
-  }) : super(key: key);
-
-  final double result;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      child: Column(
-        children: <Widget>[
-          Text(
-            "Hasil",
-            style: TextStyle(fontSize: 20),
-          ),
-          Text(
-            result.toStringAsFixed(1),
-            style: TextStyle(fontSize: 30),
-          ),
-        ],
       ),
     );
   }
